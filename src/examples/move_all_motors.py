@@ -10,15 +10,15 @@ L_IN1 = 17
 L_IN2 = 27
 L_IN3 = 10
 L_IN4 = 9
-L_ENA = 22 
-L_ENB = 11
+L_ENA = 13 
+L_ENB = 19
 
-R_IN1 = 18
-R_IN2 = 23
+R_IN1 = 23
+R_IN2 = 24
 R_IN3 = 25
 R_IN4 = 8
-R_ENA = 24
-R_ENB = 7
+R_ENA = 18
+R_ENB = 12
 
 # Pin setup
 GPIO.setup(L_IN1, GPIO.OUT)

@@ -1,50 +1,40 @@
 from evdev import InputDevice, ecodes
 import time
-import RPi.GPIO as GPIO
+import pigpio
 
 DS4_PATH = "/dev/input/event4"
-GPIO.setmode(GPIO.BCM)
+PWM_FREQ = 20000  # 20 kHz
 
-# Pin assignment
+# ------------ INITIALIZE pigpio ------------
+pi = pigpio.pi()
+if not pi.connected:
+    raise SystemExit("Unable to connect to pigpiod. Did you run 'sudo pigpiod'?")
+    # NOTA: LUEGO PROGRAMAR QUE PIGPIOD SE INICIE AUTOMÁTICAMENTE AL INICIAR EL SISTEMA
+
+# ------------ LEFT MOTOR PINS ------------
 L_IN1 = 17
 L_IN2 = 27
 L_IN3 = 10
 L_IN4 = 9
-L_ENA = 22 
-L_ENB = 11
+L_ENA = 13 
+L_ENB = 19
 
-R_IN1 = 18
-R_IN2 = 23
+# ------------ RIGHT MOTOR PINS ------------
+R_IN1 = 23
+R_IN2 = 24
 R_IN3 = 25
 R_IN4 = 8
-R_ENA = 24
-R_ENB = 7
+R_ENA = 18
+R_ENB = 12
 
-# Pin setup
-GPIO.setup(L_IN1, GPIO.OUT)
-GPIO.setup(L_IN2, GPIO.OUT)
-GPIO.setup(L_IN3, GPIO.OUT)
-GPIO.setup(L_IN4, GPIO.OUT)
-GPIO.setup(L_ENA, GPIO.OUT)
-GPIO.setup(L_ENB, GPIO.OUT)
+# ------------ PIN SETUP ------------
+for pin in [L_IN1, L_IN2, L_IN3, L_IN4, R_IN1, R_IN2, R_IN3, R_IN4]:
+    pi.set_mode(pin, pigpio.OUTPUT)
+    pi.write(pin, 0)
 
-GPIO.setup(R_IN1, GPIO.OUT)
-GPIO.setup(R_IN2, GPIO.OUT)
-GPIO.setup(R_IN3, GPIO.OUT)
-GPIO.setup(R_IN4, GPIO.OUT)
-GPIO.setup(R_ENA, GPIO.OUT)
-GPIO.setup(R_ENB, GPIO.OUT)
-
-# PWM Setup
-pwm_L_ENA = GPIO.PWM(L_ENA, 1000)
-pwm_L_ENB = GPIO.PWM(L_ENB, 1000)
-pwm_R_ENA = GPIO.PWM(R_ENA, 1000)
-pwm_R_ENB = GPIO.PWM(R_ENB, 1000)
-
-pwm_L_ENA.start(0)
-pwm_L_ENB.start(0)
-pwm_R_ENA.start(0)
-pwm_R_ENB.start(0)
+# ------------ PWM SETUP ------------
+for pin in [L_ENA, L_ENB, R_ENA, R_ENB]:
+    pi.hardware_PWM(pin, PWM_FREQ, 0)
 
 def main():
     dev = InputDevice(DS4_PATH)
@@ -79,7 +69,7 @@ def logica_control(estado):
     y = estado.get(ecodes.ABS_Y,127) # Left y axis
     x = estado.get(ecodes.ABS_RY,127) # Right y axis
 
-    # Left axis logic
+    # ---------- LEFT SIDE ----------
     if y > 140:
         left_axis_backward(y)
     elif y < 120:
@@ -87,7 +77,7 @@ def logica_control(estado):
     else:
         stop_left()
 
-    # Right axis logic
+    # ---------- RIGHT SIDE ----------
     if x > 140 :
         right_axis_backward(x)
     elif x < 120:
@@ -95,62 +85,68 @@ def logica_control(estado):
     else:
         stop_right()
 
+# ---------- MOTION FUNCTIONS ----------
 def left_axis_backward(y):
-    GPIO.output(L_IN1, 1)
-    GPIO.output(L_IN2, 0)
-    GPIO.output(L_IN3, 1)
-    GPIO.output(L_IN4, 0)
-    pwm_ly_1 = (y-140)*100/115
-    pwm_L_ENA.ChangeDutyCycle(pwm_ly_1)
-    pwm_L_ENB.ChangeDutyCycle(pwm_ly_1)
+    pi.write(L_IN1, 1)
+    pi.write(L_IN2, 0)
+    pi.write(L_IN3, 1)
+    pi.write(L_IN4, 0)
+
+    pwm_ly = int((y - 140) * 1_000_000 / 115)
+
+    pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
+    pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
 
 def left_axis_forward(y):
-    GPIO.output(L_IN1, 0)
-    GPIO.output(L_IN2, 1)
-    GPIO.output(L_IN3, 0)
-    GPIO.output(L_IN4, 1)
-    pwm_ly_1 = (120 - y)*100/120
-    pwm_L_ENA.ChangeDutyCycle(pwm_ly_1)
-    pwm_L_ENB.ChangeDutyCycle(pwm_ly_1)
+    pi.write(L_IN1, 0)
+    pi.write(L_IN2, 1)
+    pi.write(L_IN3, 0)
+    pi.write(L_IN4, 1)
+
+    pwm_ly = int((120 - y) * 1_000_000 / 120)
+
+    pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
+    pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
 
 def right_axis_backward(x):
-    GPIO.output(R_IN1, 1)
-    GPIO.output(R_IN2, 0)
-    GPIO.output(R_IN3, 1)
-    GPIO.output(R_IN4, 0)
-    pwm_ry_1 = (x-140)*100/115
-    pwm_R_ENA.ChangeDutyCycle(pwm_ry_1)
-    pwm_R_ENB.ChangeDutyCycle(pwm_ry_1)
+    pi.write(R_IN1, 1)
+    pi.write(R_IN2, 0)
+    pi.write(R_IN3, 1)
+    pi.write(R_IN4, 0)
+
+    pwm_ry = int((x - 140) * 1_000_000 / 115)
+
+    pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
+    pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
 
 def right_axis_forward(x):
-    GPIO.output(R_IN1, 0)
-    GPIO.output(R_IN2, 1)
-    GPIO.output(R_IN3, 0)
-    GPIO.output(R_IN4, 1)
-    pwm_ry_1 = (120 - x)*100/120
-    pwm_R_ENA.ChangeDutyCycle(pwm_ry_1)
-    pwm_R_ENB.ChangeDutyCycle(pwm_ry_1)
+    pi.write(R_IN1, 0)
+    pi.write(R_IN2, 1)
+    pi.write(R_IN3, 0)
+    pi.write(R_IN4, 1)
 
-def stop_right():
-    GPIO.output(R_IN1, 0)
-    GPIO.output(R_IN2, 0)
-    GPIO.output(R_IN3, 0)
-    GPIO.output(R_IN4, 0)
-    pwm_R_ENA.ChangeDutyCycle(0)
-    pwm_R_ENB.ChangeDutyCycle(0)
+    pwm_ry = int((120 - x) * 1_000_000 / 120)
+
+    pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
+    pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
 
 def stop_left():
-    GPIO.output(L_IN1, 0)
-    GPIO.output(L_IN2, 0)
-    GPIO.output(L_IN3, 0)
-    GPIO.output(L_IN4, 0)
-    pwm_L_ENB.ChangeDutyCycle(0)
-    pwm_L_ENA.ChangeDutyCycle(0)
+    for pin in [L_IN1, L_IN2, L_IN3, L_IN4]:
+        pi.write(pin, 0)
+    pi.hardware_PWM(L_ENA, PWM_FREQ, 0)
+    pi.hardware_PWM(L_ENB, PWM_FREQ, 0)
 
+def stop_right():
+    for pin in [R_IN1, R_IN2, R_IN3, R_IN4]:
+        pi.write(pin, 0)
+    pi.hardware_PWM(R_ENA, PWM_FREQ, 0)
+    pi.hardware_PWM(R_ENB, PWM_FREQ, 0)
 
 def stop_everything():
     print("Stopping everything.")
-    GPIO.cleanup()
+    stop_left()
+    stop_right()
+    pi.stop()
 
 if __name__ == "__main__":
     main()
