@@ -2,6 +2,7 @@
 from evdev import InputDevice, ecodes
 import time
 import pigpio
+import os
 
 DS4_PATH = "/dev/input/event4"
 PWM_FREQ = 20000  # 20 kHz
@@ -51,6 +52,16 @@ def esperar_ds4(path, retry_delay=1.0):
 
         time.sleep(retry_delay)
 
+def check_shutdown_combo(estado):
+    share  = estado.get(314, 0)      # SHARE
+    options = estado.get(315, 0)     # OPTIONS
+    
+    # Ambos presionados al mismo tiempo
+    if share == 1 and options == 1:
+        print("[POWER] SHARE + OPTIONS presionados. Apagando Raspberry...")
+        os.system("sudo shutdown -h now")
+
+
 def main():
     estado = {}
     dev = None
@@ -70,6 +81,7 @@ def main():
                         estado[event.code] = event.value
 
                     logica_control(estado)
+                    check_shutdown_combo(estado)
 
             except OSError as e:
                 # Típicamente: control desconectado, input/output error, etc.
