@@ -126,7 +126,6 @@ def logica_control(estado):
     else:
         stop_right()
 
-
 # ---------- MOTION FUNCTIONS ----------
 def left_axis_backward(y):
     pi.write(L_IN1, 1)
@@ -138,7 +137,6 @@ def left_axis_backward(y):
     pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
     pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
 
-
 def left_axis_forward(y):
     pi.write(L_IN1, 0)
     pi.write(L_IN2, 1)
@@ -148,7 +146,6 @@ def left_axis_forward(y):
     pwm_ly = int(1_000_000 - (y * 700_000 / 120))
     pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
     pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
-
 
 def right_axis_backward(x):
     pi.write(R_IN1, 1)
@@ -160,7 +157,6 @@ def right_axis_backward(x):
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
     pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
 
-
 def right_axis_forward(x):
     pi.write(R_IN1, 0)
     pi.write(R_IN2, 1)
@@ -170,7 +166,6 @@ def right_axis_forward(x):
     pwm_ry = int(1_000_000 - (x * 700_000 / 120))
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
     pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
-
 
 def stop_left():
     for pin in [L_IN1, L_IN2, L_IN3, L_IN4]:
