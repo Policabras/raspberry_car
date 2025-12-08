@@ -51,37 +51,48 @@ def esperar_ds4(path, retry_delay=1.0):
 
         time.sleep(retry_delay)
 
-
 def main():
     estado = {}
+    dev = None
 
     try:
-        # Esperar hasta que el DS4 esté disponible
-        dev = esperar_ds4(DS4_PATH)
-        dev.grab()
-        print("DS4 ready, reading events...")
+        while True:
+            # 1) Esperar hasta que el DS4 esté disponible
+            dev = esperar_ds4(DS4_PATH)
 
-        # Main loop
-        for event in dev.read_loop():
-            if event.type in (ecodes.EV_ABS, ecodes.EV_KEY):
-                estado[event.code] = event.value
+            try:
+                dev.grab()
+                print("DS4 ready, reading events...")
 
-            logica_control(estado)
+                # 2) Loop principal de lectura
+                for event in dev.read_loop():
+                    if event.type in (ecodes.EV_ABS, ecodes.EV_KEY):
+                        estado[event.code] = event.value
+
+                    logica_control(estado)
+
+            except OSError as e:
+                # Típicamente: control desconectado, input/output error, etc.
+                print(f"\n[DS4] Se desconectó o falló: {e}")
+                stop_left()
+                stop_right()
+                print("[DS4] Esperando otra vez al control...")
+                time.sleep(1)  # pequeña pausa para no ciclar agresivo
+
+            finally:
+                if dev is not None:
+                    try:
+                        dev.ungrab()
+                    except:
+                        pass
+                    dev = None
 
     except KeyboardInterrupt:
         print("\n[Ctrl+C] Leaving...")
 
-    except OSError as e:
-        print(f"\n[OSError] Error con el control (¿se desconectó?): {e}")
-
     finally:
-        try:
-            dev.ungrab()
-        except:
-            pass
         stop_everything()
         print("Program finished successfully.")
-
 
 def logica_control(estado):
     y = estado.get(ecodes.ABS_Y, 127)   # Left y axis
