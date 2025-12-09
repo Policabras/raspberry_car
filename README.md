@@ -62,7 +62,7 @@ Option & Share | Apagar Raspberry de forma segura |
 ## Arquitectura del sistema 🧠
 
 <p align="center">
-  <img src="assets/diagratito.png" width="450">
+  <img src="assets/pydiagrama.png" width="450">
 </p>
 
 ---
