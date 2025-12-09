@@ -71,4 +71,3 @@ Option & Share | Apagar Raspberry de forma segura |
 
 Copyright (c) 2025 Josue
 
----
