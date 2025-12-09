@@ -2,7 +2,7 @@
   <img src="assets/pytitoverde.png" width="275" style="vertical-align:middle; margin-right:8px;">
 </h1>
 
-[![amgel-lab](https://img.shields.io/badge/amgel--lab-owner-2d5131?style=flat-square&logo=github&logoColor=white)](https://github.com/amgel-lab)
+[![amgel-lab](https://img.shields.io/badge/amgel--lab-collaborator-2d5131?style=flat-square&logo=github&logoColor=white)](https://github.com/amgel-lab)
 [![amgel-lab](https://img.shields.io/badge/Ernesto356-collaborator-2d5131?style=flat-square&logo=github&logoColor=white)](https://github.com/Ernesto356)
 [![amgel-lab](https://img.shields.io/badge/josuecsmtz-collaborator-2d5131?style=flat-square&logo=github&logoColor=white)](https://github.com/josuecsmtz)
 [![amgel-lab](https://img.shields.io/badge/dNavarro--07-collaborator-2d5131?style=flat-square&logo=github&logoColor=white)](https://github.com/dNavarro-07)
@@ -31,4 +31,43 @@ El software está desarrollado en **Python,** aprovechando librerías para la le
 - Código en **Python** modular y fácil de expandir.
 - Control de velocidad y dirección con los joysticks.
 
-hola
+---
+
+## Controles del mando PS4 🕹️
+
+| Control | Acción |
+| :-----: | :---:  |
+| Joystick izquierdo| Movimiento del eje izquierdo |
+| Joystick derecho | Movimiento del eje derecho |
+| Gatillo izquierdo (L2) | Función lateral izquierda | 
+| Gatillo derecho (R2) | Función lateral derecha    
+Option & Share | Apagar Raspberry de forma segura |
+
+---
+
+## Hardware utilizado ⚙️
+
+| Componente | Función |
+| :-----: | :---:  |
+| Raspberry Pi 4 (2GB/4GB) | Control principal / procesamiento |
+| 4 Ruedas Mecanum | Movimiento omnidireccional |
+| 2 Driver L298N | Control de motores DC | 
+| 4 Motores DC | Tracción individual por rueda |    
+| Control PS4 DualShock 4 | Control de movimiento vía BT |
+| Batería recargable | Fuente de energía para motores |
+| Chasis personalizado (Madera) | Soporte estructural |
+
+---
+
+## Arquitectura del sistema 🧠
+
+<p align="center">
+  <img src="assets/diagratito.png" width="450">
+</p>
+
+---
+
+## Licencia 📜
+
+Copyright (c) 2025 Josue
+
