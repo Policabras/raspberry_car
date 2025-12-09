@@ -62,8 +62,22 @@ Option & Share | Apagar Raspberry de forma segura |
 ## Arquitectura del sistema 🧠
 
 <p align="center">
-  <img src="assets/diagramapytito.png" width="450">
+  <img src="assets/diagramapytito.png" width="500">
 </p>
+
+---
+
+## Futuras mejoras 👾
+
+- 📌 Control vía app móvil
+
+- 📌 ROS (Robot Operating System)
+
+- 📌 Telemetría y streaming de cámara
+
+- 📌 Autonomía parcial (sensores ultrasonido/LiDAR)
+
+- 📌 Path planning con IA ligera
 
 ---
 
