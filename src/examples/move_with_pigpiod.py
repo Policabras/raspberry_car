@@ -1,6 +1,8 @@
+#!/usr/bin/env python3
 from evdev import InputDevice, ecodes
 import time
 import pigpio
+import os
 
 DS4_PATH = "/dev/input/event4"
 PWM_FREQ = 20000  # 20 kHz
@@ -8,8 +10,7 @@ PWM_FREQ = 20000  # 20 kHz
 # ------------ INITIALIZE pigpio ------------
 pi = pigpio.pi()
 if not pi.connected:
-    raise SystemExit("Unable to connect to pigpiod. Did you run 'sudo pigpiod'?")
-    # NOTA: LUEGO PROGRAMAR QUE PIGPIOD SE INICIE AUTOMÁTICAMENTE AL INICIAR EL SISTEMA
+    raise SystemExit("Unable to connect to pigpiod. Is the service running?")
 
 # ------------ LEFT MOTOR PINS ------------
 L_IN1 = 17
@@ -36,20 +37,67 @@ for pin in [L_IN1, L_IN2, L_IN3, L_IN4, R_IN1, R_IN2, R_IN3, R_IN4]:
 for pin in [L_ENA, L_ENB, R_ENA, R_ENB]:
     pi.hardware_PWM(pin, PWM_FREQ, 0)
 
+
+def esperar_ds4(path, retry_delay=1.0):
+    """Espera hasta que el dispositivo DS4 exista y se pueda abrir."""
+    while True:
+        try:
+            dev = InputDevice(path)
+            print(f"[DS4] Detectado en {path}: {dev.name}")
+            return dev
+        except FileNotFoundError:
+            print(f"[DS4] {path} no encontrado. Conecta el control...")
+        except OSError as e:
+            print(f"[DS4] Dispositivo no listo ({e}). Esperando...")
+
+        time.sleep(retry_delay)
+
+def check_shutdown_combo(estado):
+    share  = estado.get(314, 0)      # SHARE
+    options = estado.get(315, 0)     # OPTIONS
+    
+    # Ambos presionados al mismo tiempo
+    if share == 1 and options == 1:
+        print("[POWER] SHARE + OPTIONS presionados. Apagando Raspberry...")
+        os.system("sudo shutdown -h now")
+
+
 def main():
-    dev = InputDevice(DS4_PATH)
     estado = {}
+    dev = None
 
     try:
-        dev.grab()
-        print("DS4 ready, reading events...")
+        while True:
+            # 1) Esperar hasta que el DS4 esté disponible
+            dev = esperar_ds4(DS4_PATH)
 
-        # Main loop
-        for event in dev.read_loop():
-            if event.type in (ecodes.EV_ABS, ecodes.EV_KEY):
-                estado[event.code] = event.value
+            try:
+                dev.grab()
+                print("DS4 ready, reading events...")
 
-            logica_control(estado)
+                # 2) Loop principal de lectura
+                for event in dev.read_loop():
+                    if event.type in (ecodes.EV_ABS, ecodes.EV_KEY):
+                        estado[event.code] = event.value
+
+                    logica_control(estado)
+                    check_shutdown_combo(estado)
+
+            except OSError as e:
+                # Típicamente: control desconectado, input/output error, etc.
+                print(f"\n[DS4] Se desconectó o falló: {e}")
+                stop_left()
+                stop_right()
+                print("[DS4] Esperando otra vez al control...")
+                time.sleep(1)  # pequeña pausa para no ciclar agresivo
+
+            finally:
+                if dev is not None:
+                    try:
+                        dev.ungrab()
+                    except:
+                        pass
+                    dev = None
 
     except KeyboardInterrupt:
         print("\n[Ctrl+C] Leaving...")
@@ -58,77 +106,112 @@ def main():
         print(f"\n[OSError] Error with the controller (did it disconnect?): {e}")
 
     finally:
-        try:
-            dev.ungrab()
-        except:
-            pass
         stop_everything()
         print("Program finished successfully.")
 
 def logica_control(estado):
-    y = estado.get(ecodes.ABS_Y,127) # Left y axis
-    x = estado.get(ecodes.ABS_RY,127) # Right y axis
+    y = estado.get(ecodes.ABS_Y, 127)   # Left y axis
+    x = estado.get(ecodes.ABS_RY, 127)  # Right y axis
+    lz = estado.get(ecodes.ABS_Z, 0)
+    rz = estado.get(ecodes.ABS_RZ, 0)
 
     # ---------- LEFT SIDE ----------
     if y > 140:
         left_axis_backward(y)
     elif y < 120:
         left_axis_forward(y)
-    else:
-        stop_left()
 
     # ---------- RIGHT SIDE ----------
-    if x > 140 :
+    if x > 140:
         right_axis_backward(x)
     elif x < 120:
         right_axis_forward(x)
-    else:
+
+    # ---------- LATERAL MOVEMENT ----------
+    if lz > 0:
+        left_lateral_movement(lz)
+    elif rz > 0:
+        right_lateral_movement(rz)
+
+    # ---------- SECURE STOP MOVEMENT ----------
+    if 140<=y<=120 and 140<=x<=120 and lz <= 0 and rz <= 0:
+        stop_left()
         stop_right()
 
 # ---------- MOTION FUNCTIONS ----------
 def left_axis_backward(y):
-    pi.write(L_IN1, 1)
-    pi.write(L_IN2, 0)
-    pi.write(L_IN3, 1)
-    pi.write(L_IN4, 0)
-
-    pwm_ly = int(300_000 + (y - 140) * 700_000 / 115)
-
-    pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
-    pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
-
-def left_axis_forward(y):
     pi.write(L_IN1, 0)
     pi.write(L_IN2, 1)
     pi.write(L_IN3, 0)
     pi.write(L_IN4, 1)
 
-    pwm_ly = int(1_000_000 - (y * 700_000 / 120))
+    pwm_ly = int(300_000 + (y - 140) * 700_000 / 115)
+    pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
+    pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
 
+def left_axis_forward(y):
+    pi.write(L_IN1, 1)
+    pi.write(L_IN2, 0)
+    pi.write(L_IN3, 1)
+    pi.write(L_IN4, 0)
+
+    pwm_ly = int(1_000_000 - (y * 700_000 / 120))
     pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
     pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
 
 def right_axis_backward(x):
     pi.write(R_IN1, 1)
     pi.write(R_IN2, 0)
-    pi.write(R_IN3, 1)
-    pi.write(R_IN4, 0)
+    pi.write(R_IN3, 0)
+    pi.write(R_IN4, 1)
 
     pwm_ry = int(300_000 + (x - 140) * 700_000 / 115)
-
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
     pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
 
 def right_axis_forward(x):
     pi.write(R_IN1, 0)
     pi.write(R_IN2, 1)
+    pi.write(R_IN3, 1)
+    pi.write(R_IN4, 0)
+
+    pwm_ry = int(1_000_000 - (x * 700_000 / 120))
+    pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
+    pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
+
+def left_lateral_movement(lz):
+    pi.write(R_IN1, 1)
+    pi.write(R_IN2, 0)
+    pi.write(R_IN3, 1)
+    pi.write(R_IN4, 0)
+
+    pi.write(L_IN1, 0)
+    pi.write(L_IN2, 1)
+    pi.write(L_IN3, 1)
+    pi.write(L_IN4, 0)
+
+    pwm_z = int(300_000 + (lz * 700_000 / 255))
+    pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_z)
+    pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_z)
+    pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_z)
+    pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_z)
+
+def right_lateral_movement(rz):
+    pi.write(R_IN1, 0)
+    pi.write(R_IN2, 1)
     pi.write(R_IN3, 0)
     pi.write(R_IN4, 1)
 
-    pwm_ry = int(1_000_000 - (x * 700_000 / 120))
+    pi.write(L_IN1, 1)
+    pi.write(L_IN2, 0)
+    pi.write(L_IN3, 0)
+    pi.write(L_IN4, 1)
 
-    pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
-    pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_ry)
+    pwm_z = int(300_000 + (rz * 700_000 / 255))
+    pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_z)
+    pi.hardware_PWM(R_ENB, PWM_FREQ, pwm_z)
+    pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_z)
+    pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_z)
 
 def stop_left():
     for pin in [L_IN1, L_IN2, L_IN3, L_IN4]:
@@ -136,17 +219,20 @@ def stop_left():
     pi.hardware_PWM(L_ENA, PWM_FREQ, 0)
     pi.hardware_PWM(L_ENB, PWM_FREQ, 0)
 
+
 def stop_right():
     for pin in [R_IN1, R_IN2, R_IN3, R_IN4]:
         pi.write(pin, 0)
     pi.hardware_PWM(R_ENA, PWM_FREQ, 0)
     pi.hardware_PWM(R_ENB, PWM_FREQ, 0)
 
+
 def stop_everything():
     print("Stopping everything.")
     stop_left()
     stop_right()
     pi.stop()
+
 
 if __name__ == "__main__":
     main()

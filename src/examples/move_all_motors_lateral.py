@@ -65,7 +65,7 @@ def main():
         print("\n[Ctrl+C] Leaving...")
 
     except OSError as e:
-        print(f"\n[OSError]Error with the controller (did it disconnect?): {e}")
+        print(f"\n[OSError] Error con el control (¿se desconectó?): {e}")
 
     finally:
         try:
@@ -78,17 +78,29 @@ def main():
 def logica_control(estado):
     y = estado.get(ecodes.ABS_Y,127) # Left y axis
     x = estado.get(ecodes.ABS_RY,127) # Right y axis
+    lz = estado.get(ecodes.ABS_Z, 0)
+    rz = estado.get(ecodes.ABS_RZ, 0)
 
-    # Left axis logic
+    # ---------- LATERAL MOVEMENT ----------
+    if lz > 0:
+        left_lateral_movement(lz)
+        return
+        
+    if rz > 0:
+        right_lateral_movement(rz)
+        return
+    
+    # ---------- LEFT SIDE ----------
     if y > 140:
         left_axis_backward(y)
     elif y < 120:
         left_axis_forward(y)
     else:
         stop_left()
+    
 
-    # Right axis logic
-    if x > 140 :
+    # ---------- RIGHT SIDE ----------
+    if x > 140:
         right_axis_backward(x)
     elif x < 120:
         right_axis_forward(x)
@@ -130,6 +142,40 @@ def right_axis_forward(x):
     pwm_ry_1 = (120 - x)*100/120
     pwm_R_ENA.ChangeDutyCycle(pwm_ry_1)
     pwm_R_ENB.ChangeDutyCycle(pwm_ry_1)
+
+def left_lateral_movement(lz):
+    GPIO.output(R_IN1, 1)
+    GPIO.output(R_IN2, 0)
+    GPIO.output(R_IN3, 1)
+    GPIO.output(R_IN4, 0)
+
+    GPIO.output(L_IN1, 0)
+    GPIO.output(L_IN2, 1)
+    GPIO.output(L_IN3, 1)
+    GPIO.output(L_IN4, 0)
+
+    pwm_z = int(lz * 100 / 255)
+    pwm_R_ENA.ChangeDutyCycle(pwm_z)
+    pwm_R_ENB.ChangeDutyCycle(pwm_z)
+    pwm_L_ENA.ChangeDutyCycle(pwm_z)
+    pwm_L_ENB.ChangeDutyCycle(pwm_z)
+
+def right_lateral_movement(rz):
+    GPIO.output(R_IN1, 0)
+    GPIO.output(R_IN2, 1)
+    GPIO.output(R_IN3, 0)
+    GPIO.output(R_IN4, 1)
+
+    GPIO.output(L_IN1, 1)
+    GPIO.output(L_IN2, 0)
+    GPIO.output(L_IN3, 0)
+    GPIO.output(L_IN4, 1)
+
+    pwm_z = int(rz * 100 / 255)
+    pwm_R_ENA.ChangeDutyCycle(pwm_z)
+    pwm_R_ENB.ChangeDutyCycle(pwm_z)
+    pwm_L_ENA.ChangeDutyCycle(pwm_z)
+    pwm_L_ENB.ChangeDutyCycle(pwm_z)
 
 def stop_right():
     GPIO.output(R_IN1, 0)

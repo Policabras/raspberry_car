@@ -137,20 +137,20 @@ def logica_control(estado):
 
 # ---------- MOTION FUNCTIONS ----------
 def left_axis_backward(y):
-    pi.write(L_IN1, 1)
-    pi.write(L_IN2, 0)
-    pi.write(L_IN3, 1)
-    pi.write(L_IN4, 0)
+    pi.write(L_IN1, 0)
+    pi.write(L_IN2, 1)
+    pi.write(L_IN3, 0)
+    pi.write(L_IN4, 1)
 
     pwm_ly = int(300_000 + (y - 140) * 700_000 / 115)
     pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
     pi.hardware_PWM(L_ENB, PWM_FREQ, pwm_ly)
 
 def left_axis_forward(y):
-    pi.write(L_IN1, 0)
-    pi.write(L_IN2, 1)
-    pi.write(L_IN3, 0)
-    pi.write(L_IN4, 1)
+    pi.write(L_IN1, 1)
+    pi.write(L_IN2, 0)
+    pi.write(L_IN3, 1)
+    pi.write(L_IN4, 0)
 
     pwm_ly = int(1_000_000 - (y * 700_000 / 120))
     pi.hardware_PWM(L_ENA, PWM_FREQ, pwm_ly)
@@ -159,8 +159,8 @@ def left_axis_forward(y):
 def right_axis_backward(x):
     pi.write(R_IN1, 1)
     pi.write(R_IN2, 0)
-    pi.write(R_IN3, 1)
-    pi.write(R_IN4, 0)
+    pi.write(R_IN3, 0)
+    pi.write(R_IN4, 1)
 
     pwm_ry = int(300_000 + (x - 140) * 700_000 / 115)
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
@@ -169,8 +169,8 @@ def right_axis_backward(x):
 def right_axis_forward(x):
     pi.write(R_IN1, 0)
     pi.write(R_IN2, 1)
-    pi.write(R_IN3, 0)
-    pi.write(R_IN4, 1)
+    pi.write(R_IN3, 1)
+    pi.write(R_IN4, 0)
 
     pwm_ry = int(1_000_000 - (x * 700_000 / 120))
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_ry)
@@ -179,13 +179,13 @@ def right_axis_forward(x):
 def left_lateral_movement(lz):
     pi.write(R_IN1, 1)
     pi.write(R_IN2, 0)
-    pi.write(R_IN3, 0)
-    pi.write(R_IN4, 1)
+    pi.write(R_IN3, 1)
+    pi.write(R_IN4, 0)
 
-    pi.write(L_IN1, 1)
-    pi.write(L_IN2, 0)
-    pi.write(L_IN3, 0)
-    pi.write(L_IN4, 1)
+    pi.write(L_IN1, 0)
+    pi.write(L_IN2, 1)
+    pi.write(L_IN3, 1)
+    pi.write(L_IN4, 0)
 
     pwm_z = int(300_000 + (lz * 700_000 / 255))
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_z)
@@ -196,13 +196,13 @@ def left_lateral_movement(lz):
 def right_lateral_movement(rz):
     pi.write(R_IN1, 0)
     pi.write(R_IN2, 1)
-    pi.write(R_IN3, 1)
-    pi.write(R_IN4, 0)
+    pi.write(R_IN3, 0)
+    pi.write(R_IN4, 1)
 
-    pi.write(L_IN1, 0)
-    pi.write(L_IN2, 1)
-    pi.write(L_IN3, 1)
-    pi.write(L_IN4, 0)
+    pi.write(L_IN1, 1)
+    pi.write(L_IN2, 0)
+    pi.write(L_IN3, 0)
+    pi.write(L_IN4, 1)
 
     pwm_z = int(300_000 + (rz * 700_000 / 255))
     pi.hardware_PWM(R_ENA, PWM_FREQ, pwm_z)
