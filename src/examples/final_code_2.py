@@ -5,7 +5,6 @@ import serial
 from serial import SerialException
 
 import RPi.GPIO as GPIO
-import signal
 from evdev import InputDevice, ecodes
 
 # OLED / luma
@@ -29,11 +28,9 @@ GPIO.setmode(GPIO.BCM)
 SERIAL_PORT = "/dev/serial0"
 BAUD_RATE = 9600
 DFPLAYER_MAX_VOL = 30
-DFPLAYER_LOW_VOL = 15  # low volume preset
 
 df_ser = None      # global DFPlayer handler
 df_ready = False   # becomes True after first successful init
-df_current_volume = DFPLAYER_MAX_VOL  # track current volume
 
 
 def df_open_serial():
@@ -87,12 +84,9 @@ def df_send(cmd, param):
 
 
 def df_set_volume(vol):
-    """Set DFPlayer volume (0–30) and remember current volume."""
-    global df_current_volume
+    """Set DFPlayer volume (0–30)."""
     vol = max(0, min(DFPLAYER_MAX_VOL, vol))
-    df_current_volume = vol
     df_send(0x06, vol)
-    print(f"[DFPLAYER] Volume command sent: {vol}")
 
 
 def df_play_track(num):
@@ -108,7 +102,7 @@ def df_init_if_needed():
     Lazily initialize DFPlayer on first use:
     - open serial
     - wait a few seconds so module can fully boot
-    - set volume once (to current preset)
+    - set volume once
     """
     global df_ready
 
@@ -121,24 +115,12 @@ def df_init_if_needed():
     time.sleep(3.0)
 
     try:
-        df_set_volume(df_current_volume)
-        print(f"[DFPLAYER] Volume initialized to {df_current_volume}")
+        df_set_volume(30)
+        print("[DFPLAYER] Volume set to 30")
     except Exception as e:
         print(f"[DFPLAYER] Error setting volume (ignored): {e}")
 
     df_ready = True
-
-
-def df_cleanup():
-    """Try to gracefully stop DFPlayer before exit/reboot."""
-    try:
-        if df_ready:
-            print("[DFPLAYER] Cleanup: sending STOP")
-            # 0x16 = STOP command in DFPlayer protocol
-            df_send(0x16, 0)
-            time.sleep(0.1)
-    except Exception as e:
-        print(f"[DFPLAYER] Cleanup error (ignored): {e}")
 
 
 # ======================================================
@@ -294,15 +276,6 @@ def oled_worker():
 
     print("[OLED] Worker thread exiting")
 
-def oled_power_off():
-    """Clear OLED display before exit/reboot."""
-    try:
-        if oled_device is not None:
-            oled_device.clear()
-            oled_device.show()
-            print("[OLED] Display cleared (off).")
-    except Exception as e:
-        print(f"[OLED] Power-off error (ignored): {e}")
 
 # ======================================================
 #                       GPIO PINS
@@ -571,13 +544,6 @@ def stop_everything():
     GPIO.cleanup()
 
 
-def _handle_sigterm(signum, frame):
-    print("[SYSTEM] SIGTERM received → exiting gracefully...")
-    raise SystemExit
-
-
-signal.signal(signal.SIGTERM, _handle_sigterm)
-
 # ======================================================
 #                         MAIN
 # ======================================================
@@ -613,19 +579,6 @@ def main():
                     # Update state
                     if event.type in (ecodes.EV_ABS, ecodes.EV_KEY):
                         estado[event.code] = event.value
-
-                    # ---------- TRIANGLE: VOLUME TOGGLE 30 ↔ 15 ----------
-                    if event.type == ecodes.EV_KEY and event.code == ecodes.BTN_NORTH:
-                        # value == 1: button pressed, 0: released
-                        if event.value == 1:
-                            df_init_if_needed()
-                            # Decide next volume
-                            if df_current_volume > DFPLAYER_LOW_VOL:
-                                new_vol = DFPLAYER_LOW_VOL
-                            else:
-                                new_vol = DFPLAYER_MAX_VOL
-                            df_set_volume(new_vol)
-                            print(f"[DFPLAYER] Triangle pressed → volume toggled to {new_vol}")
 
                     # ---------- D-PAD AUDIO ----------
                     if event.type == ecodes.EV_ABS and event.code == ecodes.ABS_HAT0Y:
@@ -679,9 +632,6 @@ def main():
                 oled_thread.join(timeout=1.0)
             except Exception:
                 pass
-        oled_power_off()
-        # Try to stop DFPlayer nicely
-        df_cleanup()
 
         stop_everything()
         try:

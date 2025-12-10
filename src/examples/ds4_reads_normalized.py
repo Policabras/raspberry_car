@@ -39,11 +39,11 @@ def norm_trigger(value):
 def main():
     dev = encontrar_ds4()
     if dev is None:
-        print("No se encontró el DS4 (Wireless Controller).")
+        print("DS4 (Wireless Controller) not found.")
         return
 
-    print(f"Usando dispositivo: {dev.path} ({dev.name})")
-    print("Mueve sticks / gatillos / D-Pad (Ctrl+C para salir)\n")
+    print(f"Using Device {dev.path} ({dev.name})")
+    print("Move sticks / triggers / D-Pad (Ctrl+C to exit)\n")
 
     last_axes = {}
     last_buttons = {}
@@ -77,7 +77,7 @@ def main():
         dev.grab()
         grabbed = True
     except PermissionError:
-        print("No se pudo hacer grab() (prueba con sudo).")
+        print("Could not perform grab() (try with sudo).")
         grabbed = False
 
     try:
@@ -93,7 +93,7 @@ def main():
                     name = BUTTON_NAMES[code]
                     if last_buttons.get(code) != value:
                         last_buttons[code] = value
-                        estado = "PRESIONADO" if value else "SUELTO"
+                        estado = "PRESSED" if value else "LOOSE"
                         print(f"[BOTON] {name}: {estado}")
 
             # -------- EJES --------
@@ -135,7 +135,7 @@ def main():
                 print(f"[EJE] {name}: raw={value:3d}  norm={norm: .3f}")
 
     except KeyboardInterrupt:
-        print("\nSaliendo...")
+        print("\nLeaving...")
     finally:
         if grabbed:
             dev.ungrab()
