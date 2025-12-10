@@ -294,6 +294,15 @@ def oled_worker():
 
     print("[OLED] Worker thread exiting")
 
+def oled_power_off():
+    """Clear OLED display before exit/reboot."""
+    try:
+        if oled_device is not None:
+            oled_device.clear()
+            oled_device.show()
+            print("[OLED] Display cleared (off).")
+    except Exception as e:
+        print(f"[OLED] Power-off error (ignored): {e}")
 
 # ======================================================
 #                       GPIO PINS
@@ -670,7 +679,7 @@ def main():
                 oled_thread.join(timeout=1.0)
             except Exception:
                 pass
-
+        oled_power_off()
         # Try to stop DFPlayer nicely
         df_cleanup()
 
