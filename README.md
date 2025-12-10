@@ -56,6 +56,7 @@ Option & Share | Apagar Raspberry de forma segura |
 | Control PS4 DualShock 4 | Control de movimiento vía BT |
 | Batería recargable | Fuente de energía para motores |
 | Chasis personalizado (Madera) | Soporte estructural |
+| Pantalla LCD OLED | Decoración (carita feliz/enojada) |
 
 ---
 
