@@ -5,10 +5,10 @@ from evdev import InputDevice, list_devices
 def main():
     devices = [InputDevice(path) for path in list_devices()]
 
-    print("Dispositivos de entrada encontrados:\n")
+    print("Input devices found:\n")
     for dev in devices:
-        print(f"Ruta: {dev.path}")
-        print(f"Nombre: {dev.name}")
+        print(f"Route: {dev.path}")
+        print(f"NAME: {dev.name}")
         print(f"Info: bustype={dev.info.bustype}, vendor={dev.info.vendor}, product={dev.info.product}")
         print("-" * 40)
 

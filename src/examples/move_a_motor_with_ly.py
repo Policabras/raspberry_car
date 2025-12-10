@@ -22,7 +22,7 @@ def main():
 
     try:
         dev.grab()
-        print("Control listo, leyendo eventos...")
+        print("Control ready, reading events...")
 
         for event in dev.read_loop():
             if event.type in (ecodes.EV_ABS, ecodes.EV_KEY):
@@ -35,7 +35,7 @@ def main():
         print("\n[Ctrl+C] Saliendo...")
 
     except OSError as e:
-        print(f"\n[OSError] Error con el control (¿se desconectó?): {e}")
+        print(f"\n[OSError] Error with the controller (did it disconnect?): {e}")
 
     finally:
         try:
@@ -43,7 +43,7 @@ def main():
         except:
             pass
         detener_todo()
-        print("Programa terminado correctamente.")
+        print("Program finished successfully.")
 
 
 def logica_control(estado):
@@ -77,7 +77,7 @@ def detener():
 
 def detener_todo():
     # Aquí luego apagas motores, limpias GPIO, etc.
-    print("Deteniendo todo.")
+    print("Stopping everything.")
     GPIO.output(L_IN1, 0)
     GPIO.output(L_IN2, 0)
     pwm_L_ENA.ChangeDutyCycle(0)

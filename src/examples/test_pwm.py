@@ -12,11 +12,11 @@ GPIO.setup(L_IN2, GPIO.OUT)
 
 pi = pigpio.pi()
 if not pi.connected:
-    print("No se pudo conectar con pigpiod. ¿Está corriendo sudo pigpiod?")
+    print("Unable to connect to pigpiod. Are you running sudo pigpiod?")
     exit(1)
 
 pi.set_PWM_frequency(PIN, 20000)  # 20 kHz
-print("Frecuencia real:", pi.get_PWM_frequency(PIN))
+print("Real frequency:", pi.get_PWM_frequency(PIN))
 
 for duty in range(0, 256, 64):
     print("Duty:", duty)

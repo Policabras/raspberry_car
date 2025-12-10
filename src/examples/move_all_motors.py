@@ -65,7 +65,7 @@ def main():
         print("\n[Ctrl+C] Leaving...")
 
     except OSError as e:
-        print(f"\n[OSError] Error con el control (¿se desconectó?): {e}")
+        print(f"\n[OSError]Error with the controller (did it disconnect?): {e}")
 
     finally:
         try:

@@ -10,8 +10,8 @@ DS4_PATH = "/dev/input/event4"   # Ajusta si tu ruta cambia
 def main():
     dev = InputDevice(DS4_PATH)
 
-    print(f"Usando dispositivo: {dev.path} ({dev.name})")
-    print("Moviendo controles... (Ctrl+C para salir)\n")
+    print(f"Using device: {dev.path} ({dev.name})")
+    print("Moving controls... (Ctrl+C para salir)\n")
 
     estado = {}
 
